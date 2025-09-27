@@ -242,6 +242,34 @@ func TestNewFileWalkerIgnoreFileCases(t *testing.T) {
 			},
 			ExpectCall: true,
 		},
+		{
+			Name: "custom ignore file ignore",
+			Case: func() *FileWalker {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "custom.ignore"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnore = []string{}
+				return walker
+			},
+			ExpectCall: false,
+		},
+		{
+			Name: "custom ignore file include",
+			Case: func() *FileWalker {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "custom.ignore"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnore = []string{"custom.ignore"}
+				return walker
+			},
+			ExpectCall: true,
+		},
 	}
 
 	for _, tc := range testCases {
