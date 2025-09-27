@@ -404,7 +404,15 @@ func (f *FileWalker) walkDirectoryRecursive(iteration int,
 	// If we have custom ignore patterns defined we should concatenate them and treat them as a single gitignore file
 	if len(f.CustomIgnorePatterns) > 0 {
 		customIgnorePatternsCombined := strings.Join(f.CustomIgnorePatterns, "\n")
-		gitIgnore := gitignore.New(bytes.NewReader([]byte(customIgnorePatternsCombined)), directory, nil)
+
+		abs, err := filepath.Abs(directory)
+		if err != nil {
+			if !f.errorsHandler(err) {
+				return err
+			}
+		}
+
+		gitIgnore := gitignore.New(bytes.NewReader([]byte(customIgnorePatternsCombined)), abs, nil)
 		customIgnores = append(customIgnores, gitIgnore)
 	}
 
