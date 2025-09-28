@@ -242,6 +242,34 @@ func TestNewFileWalkerIgnoreFileCases(t *testing.T) {
 			},
 			ExpectCall: true,
 		},
+		{
+			Name: "custom ignore file ignore",
+			Case: func() *FileWalker {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "custom.ignore"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnore = []string{}
+				return walker
+			},
+			ExpectCall: false,
+		},
+		{
+			Name: "custom ignore file include",
+			Case: func() *FileWalker {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "custom.ignore"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnore = []string{"custom.ignore"}
+				return walker
+			},
+			ExpectCall: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -444,6 +472,64 @@ func TestNewFileWalkerFileCases(t *testing.T) {
 				return walker, fileListQueue
 			},
 			Expected: 0,
+		},
+		{
+			Name: "CustomIgnorePatterns 0",
+			Case: func() (*FileWalker, chan *File) {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "test.md"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnorePatterns = []string{"*.md"}
+				return walker, fileListQueue
+			},
+			Expected: 0,
+		},
+		{
+			Name: "CustomIgnorePatterns 1",
+			Case: func() (*FileWalker, chan *File) {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "test.md"))
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(d, fileListQueue)
+
+				walker.CustomIgnorePatterns = []string{"*.go"}
+				return walker, fileListQueue
+			},
+			Expected: 1,
+		},
+		{
+			Name: "CustomIgnorePatterns relative 0",
+			Case: func() (*FileWalker, chan *File) {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "test.md"))
+				_ = os.Chdir(d)
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(".", fileListQueue)
+
+				walker.CustomIgnorePatterns = []string{"*.md"}
+				return walker, fileListQueue
+			},
+			Expected: 0,
+		},
+		{
+			Name: "CustomIgnorePatterns relative 1",
+			Case: func() (*FileWalker, chan *File) {
+				d, _ := os.MkdirTemp(os.TempDir(), randSeq(10))
+				_, _ = os.Create(filepath.Join(d, "test.md"))
+				_ = os.Chdir(d)
+
+				fileListQueue := make(chan *File, 10)
+				walker := NewFileWalker(".", fileListQueue)
+
+				walker.CustomIgnorePatterns = []string{"*.go"}
+				return walker, fileListQueue
+			},
+			Expected: 1,
 		},
 	}
 
@@ -710,7 +796,7 @@ func TestNewFileWalkerBinary(t *testing.T) {
 
 				d3 := filepath.Join(d2, "more_stuff")
 				_ = os.Mkdir(d3, 0777)
-				
+
 				nullByte := []byte{0}
 				_ = os.WriteFile(filepath.Join(d3, "null.txt"), nullByte, 0644)
 				_ = os.WriteFile(filepath.Join(d3, "null2.txt"), nullByte, 0644)
